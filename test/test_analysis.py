@@ -27,9 +27,23 @@ class AnalysisServiceTest(unittest.TestCase):
 class FlaskAppTest(unittest.TestCase):
     def setUp(self):
         app.config["TESTING"] = True
+        app.config["AUTH_USERNAME"] = "admin"
         self.client = app.test_client()
 
+    def login(self):
+        return self.client.post(
+            "/login",
+            data={"username": "admin", "password": "Admin@123"},
+            follow_redirects=True,
+        )
+
+    def test_redirect_to_login_when_unauthenticated(self):
+        resp = self.client.get("/", follow_redirects=False)
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn("/login", resp.headers["Location"])
+
     def test_reject_non_python_upload(self):
+        self.login()
         resp = self.client.post(
             "/",
             data={"file": (io.BytesIO(b"hello"), "not_python.txt")},

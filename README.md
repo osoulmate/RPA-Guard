@@ -54,3 +54,22 @@ python app.py
 ```
 
 默认仅在 `FLASK_DEBUG=1` 时开启 Debug 模式。
+
+
+## 认证与安全配置
+
+系统已启用基础用户名密码认证：
+
+- 默认用户名：`admin`
+- 默认密码：`Admin@123`
+
+生产环境请通过环境变量覆盖：
+
+```bash
+export SECRET_KEY="your-random-secret"
+export AUTH_USERNAME="your-admin"
+export AUTH_PASSWORD="your-strong-password"
+python app.py
+```
+# 切换分支
+git switch -c codex/optimize-username/password-authentication-and-ui --track origin/codex/optimize-username/password-authentication-and-ui

@@ -1,8 +1,18 @@
 import os
 import uuid
+from functools import wraps
 from pathlib import Path
 
-from flask import Flask, render_template, request, url_for
+from flask import (
+    Flask,
+    flash,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
+from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 
 from analysis_service import AnalysisError, AnalysisService
@@ -13,6 +23,11 @@ app.config["STATIC_FOLDER"] = "static/images"
 app.config["MAX_CONTENT_LENGTH"] = 2 * 1024 * 1024
 app.config["ALLOWED_EXTENSIONS"] = {"py"}
 app.config["DEBUG"] = os.getenv("FLASK_DEBUG", "0") == "1"
+app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-change-this-key")
+
+# 基础用户名密码认证（建议通过环境变量覆盖）
+app.config["AUTH_USERNAME"] = os.getenv("AUTH_USERNAME", "admin")
+app.config["AUTH_PASSWORD_HASH"] = generate_password_hash(os.getenv("AUTH_PASSWORD", "Admin@123"))
 
 upload_dir = Path(app.config["UPLOAD_FOLDER"])
 static_dir = Path(app.config["STATIC_FOLDER"])
@@ -26,7 +41,48 @@ def allowed_file(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[1].lower() in app.config["ALLOWED_EXTENSIONS"]
 
 
+def login_required(view_func):
+    @wraps(view_func)
+    def wrapper(*args, **kwargs):
+        if not session.get("authenticated"):
+            return redirect(url_for("login", next=request.path))
+        return view_func(*args, **kwargs)
+
+    return wrapper
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if session.get("authenticated"):
+        return redirect(url_for("index"))
+
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+        expected_username = app.config["AUTH_USERNAME"]
+        password_hash = app.config["AUTH_PASSWORD_HASH"]
+
+        if username == expected_username and check_password_hash(password_hash, password):
+            session["authenticated"] = True
+            session["username"] = username
+            flash("登录成功。", "success")
+            next_url = request.args.get("next") or url_for("index")
+            return redirect(next_url)
+
+        flash("用户名或密码错误，请重试。", "error")
+
+    return render_template("login.html")
+
+
+@app.route("/logout", methods=["POST"])
+def logout():
+    session.clear()
+    flash("已安全退出登录。", "info")
+    return redirect(url_for("login"))
+
+
 @app.route("/", methods=["GET", "POST"])
+@login_required
 def index():
     image_url = None
     test_cases = []
@@ -74,6 +130,7 @@ def index():
         error_message=error_message,
         source_code=source_code,
         source_filename=source_filename,
+        username=session.get("username", ""),
     )
 
 
