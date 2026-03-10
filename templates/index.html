@@ -1,164 +1,249 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ClawVerify - 智能代码路径分析平台</title>
     <style>
-        body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f7f6; color: #1f2937; }
-        .page-layout { display: flex; min-height: 100vh; }
-        .container { flex: 1; max-width: 1000px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
-        .content-wrap { flex: 1; padding: 40px 24px; transition: margin-right .3s ease; }
-        .content-wrap.with-drawer { margin-right: min(42vw, 560px); }
-        h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
-        .upload-section { margin: 20px 0; padding: 20px; border: 2px dashed #bdc3c7; text-align: center; }
-        .result-img { margin-top: 30px; width: 100%; border: 1px solid #ddd; border-radius: 8px; }
-        .alert { margin-top: 12px; padding: 10px 12px; border-radius: 6px; }
-        .alert.error { background: #fdecea; color: #b42318; border: 1px solid #f7b4ad; }
-        .alert.warn { background: #fff8e8; color: #9a6700; border: 1px solid #f2d79f; }
-        .alert.info { background: #e8f4fd; color: #0b5394; border: 1px solid #9ec5e5; }
-        .empty-state { margin-top: 16px; color: #6b7280; }
-        table { width: 100%; border-collapse: collapse; background: #fff; }
-        th, td { padding: 10px; border: 1px solid #ddd; }
-        th { background: #f8f9fa; }
-        code { background: #f4f4f4; padding: 2px 6px; border-radius: 4px; }
-        button { background: #3498db; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 4px; }
-        button:hover { background: #2980b9; }
-        .drawer-toggle { position: fixed; right: 16px; top: 18px; z-index: 1200; background: #111827; color: #fff; border-radius: 999px; padding: 10px 16px; box-shadow: 0 8px 20px rgba(17,24,39,.2); }
-        .drawer { position: fixed; top: 0; right: 0; width: min(42vw, 560px); height: 100vh; background: #0f172a; color: #e2e8f0; transform: translateX(100%); transition: transform .3s ease; z-index: 1100; box-shadow: -10px 0 25px rgba(0,0,0,.2); display: flex; flex-direction: column; }
-        .drawer.open { transform: translateX(0); }
-        .drawer-header { padding: 20px 24px 12px; border-bottom: 1px solid rgba(148,163,184,.25); }
-        .drawer-title { margin: 0; font-size: 18px; }
-        .drawer-subtitle { margin: 8px 0 0; font-size: 13px; color: #94a3b8; word-break: break-all; }
-        .drawer-body { margin: 0; padding: 20px 24px 28px; overflow: auto; flex: 1; }
-        .drawer code { background: transparent; padding: 0; display: block; white-space: pre; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 13px; line-height: 1.55; }
-        .overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, .35); opacity: 0; pointer-events: none; transition: opacity .2s ease; z-index: 1000; }
-        .overlay.show { opacity: 1; pointer-events: all; }
-        @media (max-width: 960px) {
-            .content-wrap.with-drawer { margin-right: 0; }
-            .drawer { width: 100vw; }
+        :root {
+            --bg: #f3f6fb;
+            --card: #ffffff;
+            --text: #0f172a;
+            --muted: #64748b;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --border: #dbe4f0;
+            --danger-bg: #fef2f2;
+            --danger-text: #b91c1c;
+            --warn-bg: #fffbeb;
+            --warn-text: #92400e;
+            --info-bg: #eff6ff;
+            --info-text: #1e40af;
+            --success: #16a34a;
+            --shadow: 0 14px 28px rgba(2, 8, 20, 0.08);
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: "Inter", "PingFang SC", "Microsoft YaHei", sans-serif;
+            color: var(--text);
+            background: radial-gradient(circle at top right, #e2ebff 0, #f6f9ff 48%, #f3f6fb 100%);
+        }
+
+        .app-shell {
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 1fr;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 28px;
+            background: rgba(255,255,255,0.86);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 200;
+        }
+
+        .brand {
+            font-weight: 700;
+            letter-spacing: .2px;
+        }
+
+        .user-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: #eef4ff;
+            color: #1e3a8a;
+            font-size: 13px;
+            border: 1px solid #c7d8ff;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: .2s ease;
+        }
+
+        .btn-primary { background: var(--primary); color: #fff; }
+        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-ghost { background: #fff; border: 1px solid var(--border); }
+
+        .layout {
+            max-width: 1280px;
+            margin: 24px auto;
+            width: 100%;
+            padding: 0 20px 28px;
+            display: grid;
+            grid-template-columns: 2.1fr 1fr;
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            padding: 20px;
+        }
+
+        .title { margin: 0 0 8px; }
+        .subtitle { margin: 0 0 18px; color: var(--muted); font-size: 14px; }
+
+        .upload-form {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 12px;
+            align-items: center;
+            margin-top: 12px;
+        }
+
+        input[type="file"] {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px;
+            width: 100%;
+            background: #fbfdff;
+        }
+
+        .helper { color: var(--muted); font-size: 13px; margin: 10px 0 0; }
+
+        .alert { margin-top: 12px; padding: 11px 12px; border-radius: 10px; border: 1px solid transparent; font-size: 14px; }
+        .alert.error { background: var(--danger-bg); color: var(--danger-text); border-color: #fecaca; }
+        .alert.warn { background: var(--warn-bg); color: var(--warn-text); border-color: #fde68a; }
+        .alert.info { background: var(--info-bg); color: var(--info-text); border-color: #bfdbfe; }
+
+        .result-img { margin-top: 18px; width: 100%; border-radius: 12px; border: 1px solid var(--border); }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 14px; }
+        th, td { padding: 10px; border-bottom: 1px solid var(--border); text-align: left; }
+        th { color: var(--muted); font-weight: 600; }
+        .mono { font-family: "SFMono-Regular", Consolas, monospace; }
+        .success { color: var(--success); font-weight: 600; }
+
+        .side-title { margin: 0 0 10px; }
+        .code-box {
+            max-height: 72vh;
+            overflow: auto;
+            margin: 0;
+            border-radius: 12px;
+            border: 1px solid #1f2937;
+            background: #0b1220;
+            color: #e2e8f0;
+            padding: 14px;
+            font-size: 13px;
+            line-height: 1.55;
+        }
+
+        @media (max-width: 1024px) {
+            .layout { grid-template-columns: 1fr; }
+            .upload-form { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
-    {% set has_source = source_code is not none %}
-    <button id="drawerToggle" class="drawer-toggle" type="button" {% if not has_source %}disabled{% endif %}>
-        {% if has_source %}查看源码{% else %}等待上传源码{% endif %}
-    </button>
-    <div id="drawerOverlay" class="overlay"></div>
-
-    <div class="page-layout">
-        <div id="contentWrap" class="content-wrap {% if has_source %}with-drawer{% endif %}">
-            <div class="container">
-        <h1>ClawVerify 智能代码审计</h1>
-        <p>基于 SMT 约束求解与 CDFG 遍历的代码逻辑验证引擎</p>
-
-        <div class="upload-section">
-            <form method="post" enctype="multipart/form-data">
-                <input type="file" name="file" accept=".py">
-                <button type="submit">开始逻辑审计</button>
-            </form>
-            <p>限制：仅支持 <code>.py</code> 文件，大小不超过 2MB。</p>
-        </div>
-
-        {% if error_message %}
-        <div class="alert error">{{ error_message }}</div>
-        {% endif %}
-
-        {% if warnings %}
-        <div class="alert warn">
-            <strong>解析告警：</strong>
-            <ul>
-                {% for item in warnings %}
-                <li>{{ item }}</li>
-                {% endfor %}
-            </ul>
-        </div>
-        {% endif %}
-
-        {% if blocked_paths %}
-        <div class="alert info">
-            <strong>不可达路径：</strong>
-            <ul>
-                {% for path in blocked_paths %}
-                <li>{{ path }}</li>
-                {% endfor %}
-            </ul>
-        </div>
-        {% endif %}
-
-        {% if image_url %}
-        <h3>分析结果可视化：</h3>
-        <img src="{{ image_url }}" class="result-img" alt="CDFG Analysis Result">
-        {% else %}
-        <p class="empty-state">尚未生成分析图。请上传代码文件后开始审计。</p>
-        {% endif %}
-
-        {% if test_cases %}
-        <div style="margin-top: 30px;">
-            <h3>🚀 自动生成的测试用例 (ATPG)</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>执行路径</th>
-                        <th>建议测试输入 (SMT Model)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for case in test_cases %}
-                    <tr>
-                        <td style="font-family: monospace;">{{ case.path }}</td>
-                        <td style="color: #27ae60; font-weight: bold;">{{ case.inputs }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% elif image_url %}
-        <p class="empty-state">未生成可行测试数据，请检查逻辑约束。</p>
-        {% endif %}
+    <div class="app-shell">
+        <header class="header">
+            <div class="brand">ClawVerify · 工业级路径审计控制台</div>
+            <div class="user-actions">
+                <span class="badge">当前用户：{{ username }}</span>
+                <form method="post" action="{{ url_for('logout') }}">
+                    <button class="btn btn-ghost" type="submit">退出登录</button>
+                </form>
             </div>
-        </div>
+        </header>
 
-        {% if has_source %}
-        <aside id="sourceDrawer" class="drawer open" aria-label="上传源码展示">
-            <div class="drawer-header">
-                <h3 class="drawer-title">📄 上传代码对照区</h3>
-                <p class="drawer-subtitle">{{ source_filename }}</p>
-            </div>
-            <pre class="drawer-body"><code>{{ source_code }}</code></pre>
-        </aside>
-        {% endif %}
+        <main class="layout">
+            <section class="card">
+                <h1 class="title">智能代码审计</h1>
+                <p class="subtitle">基于 SMT 约束求解与 CDFG 遍历，实现自动化路径分析与测试输入建议。</p>
+
+                <form method="post" enctype="multipart/form-data" class="upload-form">
+                    <input type="file" name="file" accept=".py" required>
+                    <button class="btn btn-primary" type="submit">开始审计</button>
+                </form>
+                <p class="helper">限制：仅支持 <code>.py</code> 文件，大小不超过 2MB。</p>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert {{ 'error' if category == 'error' else 'info' }}">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                {% if error_message %}
+                <div class="alert error">{{ error_message }}</div>
+                {% endif %}
+
+                {% if warnings %}
+                <div class="alert warn">
+                    <strong>解析告警：</strong>
+                    <ul>
+                        {% for item in warnings %}<li>{{ item }}</li>{% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                {% if blocked_paths %}
+                <div class="alert info">
+                    <strong>不可达路径：</strong>
+                    <ul>
+                        {% for path in blocked_paths %}<li>{{ path }}</li>{% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                {% if image_url %}
+                <img src="{{ image_url }}" class="result-img" alt="CDFG Analysis Result">
+                {% else %}
+                <p class="helper">尚未生成分析图。请上传代码文件后开始审计。</p>
+                {% endif %}
+
+                {% if test_cases %}
+                <h3>自动生成测试用例（ATPG）</h3>
+                <table>
+                    <thead>
+                        <tr><th>执行路径</th><th>建议测试输入（SMT Model）</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for case in test_cases %}
+                        <tr>
+                            <td class="mono">{{ case.path }}</td>
+                            <td class="success">{{ case.inputs }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% endif %}
+            </section>
+
+            <aside class="card">
+                <h3 class="side-title">源码对照区</h3>
+                {% if source_code %}
+                <p class="subtitle">{{ source_filename }}</p>
+                <pre class="code-box"><code>{{ source_code }}</code></pre>
+                {% else %}
+                <p class="helper">上传并分析后，可在此查看源代码内容。</p>
+                {% endif %}
+            </aside>
+        </main>
     </div>
-
-    <script>
-        const toggleButton = document.getElementById('drawerToggle');
-        const sourceDrawer = document.getElementById('sourceDrawer');
-        const drawerOverlay = document.getElementById('drawerOverlay');
-        const contentWrap = document.getElementById('contentWrap');
-
-        const setDrawerState = (open) => {
-            if (!sourceDrawer) return;
-            sourceDrawer.classList.toggle('open', open);
-            drawerOverlay?.classList.toggle('show', open);
-            contentWrap?.classList.toggle('with-drawer', open && window.innerWidth > 960);
-            if (toggleButton) {
-                toggleButton.textContent = open ? '隐藏源码' : '查看源码';
-            }
-        };
-
-        if (sourceDrawer && toggleButton) {
-            toggleButton.addEventListener('click', () => {
-                setDrawerState(!sourceDrawer.classList.contains('open'));
-            });
-            drawerOverlay?.addEventListener('click', () => setDrawerState(false));
-            window.addEventListener('resize', () => {
-                if (window.innerWidth <= 960) {
-                    contentWrap?.classList.remove('with-drawer');
-                } else if (sourceDrawer.classList.contains('open')) {
-                    contentWrap?.classList.add('with-drawer');
-                }
-            });
-        }
-    </script>
 </body>
 </html>
