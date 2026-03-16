@@ -1,0 +1,22 @@
+%% 1. 声明所有节点及显示名称 (独立声明，完美兼容后端正则)
+in_balance["输入虚线控制: balance"]
+in_wdraw["输入虚线控制: w_draw"]
+P1["Receive_Command (接收命令)"]
+P2["Check_Password (校验鉴权)"]
+P3["Withdraw (取款处理)"]
+P4["Show_Balance (查询余额)"]
+pr_msg_out["输出: pr_msg (密码错误)"]
+e_msg_out["输出: e_msg (取款异常)"]
+cash_out["输出: cash (成功吐钞)"]
+balance_out["输出: balance (显示余额)"]
+
+%% 2. 定义图的连线流转 (严格复刻原始 CDFD 架构)
+in_balance --> P1
+in_wdraw --> P1
+P1 -- "sel" --> P2
+P2 -- "pr_msg" --> pr_msg_out
+P2 -- "account1" --> P3
+P2 -- "account2" --> P4
+P3 -- "e_msg" --> e_msg_out
+P3 -- "cash" --> cash_out
+P4 -- "balance" --> balance_out
