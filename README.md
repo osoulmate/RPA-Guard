@@ -51,8 +51,6 @@ cd mbt-engine
 ### 2. 后端部署 (FastAPI)
 
 ```bash
-# 进入后端目录 (假设在 src 目录下)
-cd src
 # 安装依赖
 pip install fastapi uvicorn pydantic
 # 启动服务
